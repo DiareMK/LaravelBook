@@ -11,15 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Твій код має бути ТУТ, всередині цих дужок
         Schema::create('books', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); // Назва книги
-            $table->text('description')->nullable(); // Опис книги
-
-        // Створюємо поле для зв'язку з таблицею 'authors'
-            $table->foreignId('author_id')
-              ->constrained('authors') // Вказує, що це ключ до таблиці 'authors'
-              ->onDelete('cascade'); // Якщо видаляємо автора, видаляємо і його книги
+            $table->string('title');
+            $table->text('description')->nullable();
+            
+            // Зв'язки
+            $table->foreignId('author_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('publisher_id')->nullable()->constrained()->cascadeOnDelete();
+            
             $table->timestamps();
         });
     }

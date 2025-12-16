@@ -7,11 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class Book extends Model
 {
+    use HasFactory;
+    // Не забудь додати publisher_id у fillable
+    protected $fillable = ['title', 'description', 'author_id', 'publisher_id'];
+
     public function author()
     {
-    // Одна книга належить одному автору
-    return $this->belongsTo(Author::class);
+        return $this->belongsTo(Author::class);
     }
-    /** @use HasFactory<\Database\Factories\BookFactory> */
-    use HasFactory;
+
+    public function publisher()
+    {
+        return $this->belongsTo(Publisher::class);
+    }
+
+    // Це зв'язок через допоміжну таблицю book_genre
+    public function genres()
+    {
+        return $this->belongsToMany(Genre::class);
+    }
 }

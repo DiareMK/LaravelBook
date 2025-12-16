@@ -3,42 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use Inertia\Inertia; // Це "міст" між Laravel та React
 use Illuminate\Http\Request;
-
-
-
 
 class BookController extends Controller
 {
-    /**
-     * Показує список всіх книг (наш dashboard).
-     */
-    public function index()
+    public function index(Request $request)
     {
-        // Отримуємо всі книги, але також одразу завантажуємо
-        // пов'язану модель 'author', щоб уникнути N+1 проблеми.
-        // .latest() - сортує від нових до старих
-        // .paginate(15) - розбиває на сторінки по 15 книг
-        $books = Book::with('author')->latest()->paginate(15);
-        $books = \App\Models\Book::with('author')->latest()->paginate(15);
+        // Починаємо будувати запит
+        $query = Book::with(['author', 'publisher', 'genres']);
 
-        // Передаємо книги у шаблон 'dashboard',
-        // який ми створимо на наступному кроці
-        return view('dashboard', [
+        // 1. Пошук по назві книги (якщо є параметр 'search')
+        $query->when($request->input('search'), function ($q, $search) {
+            $q->where('title', 'like', "%{$search}%");
+        });
+
+        // 2. Фільтр по Автору (якщо клікнули на автора)
+        $query->when($request->input('author_id'), function ($q, $id) {
+            $q->where('author_id', $id);
+        });
+
+        // 3. Фільтр по Видавництву
+        $query->when($request->input('publisher_id'), function ($q, $id) {
+            $q->where('publisher_id', $id);
+        });
+
+        // 4. Фільтр по Жанру (тут трохи складніше, бо зв'язок Many-to-Many)
+        $query->when($request->input('genre_id'), function ($q, $id) {
+            $q->whereHas('genres', function ($query) use ($id) {
+                $query->where('genres.id', $id);
+            });
+        });
+
+        // Отримуємо результат
+        $books = $query->get();
+
+        return Inertia::render('Books/Index', [
             'books' => $books,
-        ]);
-    }
-
-    /**
-     * Показує одну конкретну книгу.
-     */
-    // Laravel автоматично знайде книгу за ID з URL
-    public function show(Book $book) 
-    {
-        // Передаємо знайдену книгу у шаблон 'books.show'
-        // (ми його скоро створимо)
-        return view('books.show', [
-            'book' => $book,
+            // Повертаємо поточні фільтри назад на фронтенд, щоб підсвітити їх або заповнити пошук
+            'filters' => $request->only(['search', 'author_id', 'publisher_id', 'genre_id'])
         ]);
     }
 }

@@ -1,38 +1,29 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\BookController;   
-use App\Http\Controllers\AuthorController; 
+use Inertia\Inertia;
+use App\Http\Controllers\BookController;
 
 Route::get('/', function () {
-
-    return view('welcome');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
-// 1. Маршрут для головної сторінки (список книг)
-// Ми змушуємо існуючий /dashboard використовувати наш BookController
-Route::get('/dashboard', [BookController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-// 2. Маршрут для сторінки однієї книги
-Route::get('/books/{book}', [BookController::class, 'show'])
-    ->middleware(['auth', 'verified'])
-    ->name('books.show'); // <--- даємо маршруту ім'я
-
-// 3. Маршрут для сторінки одного автора
-Route::get('/authors/{author}', [AuthorController::class, 'show'])
-    ->middleware(['auth', 'verified'])
-    ->name('authors.show'); // <--- даємо маршруту ім'я
-
-
+Route::get('/dashboard', function () {
+    return Inertia::render('Dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/books', [BookController::class, 'index'])->name('books.index');
 });
 
 require __DIR__.'/auth.php';
